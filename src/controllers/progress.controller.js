@@ -168,12 +168,13 @@ exports.updateProgress = async (req, res) => {
     const cleanDate = new Date(date);
     cleanDate.setHours(0, 0, 0, 0);
     const updated = await Progress.findOneAndUpdate(
-      { user_id, stage_id, date: cleanDate },
+      { user_id, stage_id },
       {
         $set: {
           cigarettes_smoked,
           money_saved,
           health_status,
+          date: cleanDate
         },
       },
       { new: true, upsert: true }
