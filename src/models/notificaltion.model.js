@@ -10,7 +10,7 @@ const notificationSchema = new mongoose.Schema(
     progress_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Progress",
-      required: true,
+      required: false,
     },
     message: {
       type: String,
@@ -23,7 +23,7 @@ const notificationSchema = new mongoose.Schema(
     },
     schedule: {
       type: Date,
-      required: true,
+      default: Date.now,
     },
     is_sent: {
       type: Boolean,
