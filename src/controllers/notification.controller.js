@@ -1,32 +1,40 @@
 const Notification = require("../models/notificaltion.model");
 const Progress = require("../models/progress.model"); // Import model tiến trình
+const QuitPlan = require("../models/quitPlan.model");
+const Stage = require("../models/stage.model");
+const Task = require("../models/task.model");
 
 exports.createNotification = async (req, res) => {
   try {
-    const { progress_id, message, type, schedule } = req.body;
+    const { progress_id, message, type, user_id } = req.body;
+    const schedule = new Date();
 
-    // ✅ Kiểm tra role
     if (req.user.role !== "admin" && req.user.role !== "coach") {
       return res
         .status(403)
         .json({ error: "Only admin or coach can send notifications" });
     }
 
-    // ✅ Kiểm tra dữ liệu đầu vào
-    if (!progress_id || !message || !type || !schedule) {
+    if (!message || !type || (!user_id && !progress_id)) {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // ✅ Lấy tiến trình
-    const progress = await Progress.findById(progress_id);
-    if (!progress) {
-      return res.status(404).json({ error: "Progress not found" });
+    let finalUserId = user_id;
+
+    // Nếu có progress_id → lấy user từ progress
+    if (progress_id) {
+      const progress = await require("../models/progress.model").findById(
+        progress_id
+      );
+      if (!progress) {
+        return res.status(404).json({ error: "Progress not found" });
+      }
+      finalUserId = progress.user_id;
     }
 
-    // ✅ Tạo Notification, tự động lấy user_id từ progress
     const newNotification = new Notification({
-      user_id: progress.user_id,
-      progress_id: progress._id,
+      user_id: finalUserId,
+      progress_id: progress_id || undefined,
       message,
       type,
       schedule,
@@ -109,5 +117,62 @@ exports.getNotificationsByUser = async (req, res) => {
     res.status(200).json(notifications);
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
+  }
+};
+// ✅ API: Coach xem tất cả học viên mình quản lý và thông tin tiến trình
+exports.getMyStudentsWithProgress = async (req, res) => {
+  try {
+    if (req.user.role !== "coach") {
+      return res.status(403).json({ message: "Only coaches can access this" });
+    }
+
+    const quitPlans = await QuitPlan.find({ coach_id: req.user.id }).populate(
+      "user_id"
+    );
+    const result = [];
+
+    for (const plan of quitPlans) {
+      const stages = await Stage.find({ plan_id: plan._id });
+
+      for (const stage of stages) {
+        const progress = await Progress.findOne({
+          user_id: plan.user_id._id,
+          stage_id: stage._id,
+        });
+
+        const tasks = await Task.find({ stage_id: stage._id });
+
+        let notifications = [];
+
+        if (progress) {
+          // Nếu có tiến trình thì tìm các notification liên quan
+          notifications = await Notification.find({
+            progress_id: progress._id,
+          }).sort({ createdAt: -1 });
+        } else {
+          // Nếu chưa có tiến trình → tìm theo user và loại nhắc nhở
+          notifications = await Notification.find({
+            user_id: plan.user_id._id,
+            type: "reminder",
+            progress_id: { $exists: false },
+          }).sort({ createdAt: -1 });
+        }
+
+        result.push({
+          user: plan.user_id,
+          quit_plan: plan,
+          stage,
+          tasks,
+          progress,
+          notifications, // ✅ Gắn vào đây
+        });
+      }
+    }
+
+    res.status(200).json(result);
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Error fetching students", error: err.message });
   }
 };

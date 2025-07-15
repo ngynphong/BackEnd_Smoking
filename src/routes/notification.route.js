@@ -19,6 +19,13 @@ notificationRouter.get(
   notificationController.getAllNotifications
 );
 
+notificationRouter.get(
+  "/my-students-progress",
+  validateToken,
+  checkRole(["coach"]),
+  notificationController.getMyStudentsWithProgress
+);
+
 // [GET] Lấy thông báo theo ID
 notificationRouter.get(
   "/:id",
@@ -50,4 +57,5 @@ notificationRouter.get(
   checkRole(["user", "coach", "admin"]),
   notificationController.getNotificationsByUser
 );
+
 module.exports = notificationRouter;
