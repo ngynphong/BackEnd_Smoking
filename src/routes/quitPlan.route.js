@@ -107,4 +107,8 @@ quitPlanRouter.get(
   quitPlanController.getRequestsByCoachId
 );
 
+quitPlanRouter.post('/public', validateToken, quitPlanController.createPublicPlan);
+quitPlanRouter.put('/:id/toggle-public', validateToken, quitPlanController.togglePlanPublicStatus);
+
+
 module.exports = quitPlanRouter;

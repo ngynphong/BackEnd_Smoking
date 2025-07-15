@@ -421,3 +421,71 @@ exports.getRequestsByCoachId = async (req, res) => {
     res.status(500).json({ message: "Lỗi server", error });
   }
 };
+
+module.exports.createPublicPlan = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Chỉ admin mới được tạo kế hoạch công khai"
+      });
+    }
+
+    const {
+      reason,
+      name,
+      start_date,
+      target_quit_date,
+      image
+    } = req.body;
+
+    const publicPlan = await QuitPlan.create({
+      user_id: req.user.id,
+      reason,
+      name,
+      start_date,
+      target_quit_date,
+      image,
+      is_public: true
+    });
+
+    res.status(201).json({
+      message: "Đã tạo kế hoạch công khai thành công",
+      plan: publicPlan
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      message: "Lỗi khi tạo kế hoạch công khai",
+      error: error.message
+    });
+  }
+};
+
+module.exports.togglePlanPublicStatus = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        message: "Chỉ admin mới được thay đổi trạng thái công khai"
+      });
+    }
+
+    const plan = await QuitPlan.findById(req.params.id);
+    if (!plan) {
+      return res.status(404).json({ message: "Không tìm thấy kế hoạch" });
+    }
+
+    plan.is_public = !plan.is_public;
+    await plan.save();
+
+    res.status(200).json({
+      message: `Đã ${plan.is_public ? "công khai" : "ẩn"} kế hoạch thành công`,
+      plan
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      message: "Lỗi khi thay đổi trạng thái công khai",
+      error: error.message
+    });
+  }
+};

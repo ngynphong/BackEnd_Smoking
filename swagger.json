@@ -2317,6 +2317,94 @@
                         }
                     }
                 }
+            },
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "QuitPlan"
+                ],
+                "summary": "Create Public QuitPlan For Admin",
+                "description": "",
+                "operationId": "postapiquitPlanpublic",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "example": {
+                                    "name": "Kế hoạch cai thuốc cho người mới nghiện thuốc",
+                                    "start_date": "2025-07-15",
+                                    "target_quit_date": "2025-08-15",
+                                    "reason": "Sức khỏe suy sụp, lờ đờ uể oải cả ngày thiếu sức sống",
+                                    "image": "https://statictuoitre.mediacdn.vn/thumb_w/640/2017/7-1512755474943.jpg"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/quitPlan/{id}/toggle-public": {
+            "put": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "QuitPlan"
+                ],
+                "summary": "Update IsPublic",
+                "description": "",
+                "operationId": "putapiquitPlanidtogglepublic",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {}
+                    }
+                }
             }
         },
         "/api/quitPlan/my-users": {
