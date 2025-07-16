@@ -102,21 +102,23 @@ exports.deleteNotification = async (req, res) => {
 
 // GET /notifications/user/:userId
 exports.getNotificationsByUser = async (req, res) => {
-  const { userId } = req.params;
-
   try {
-    // Tìm tất cả progress của user
-    const progresses = await Progress.find({ user_id: userId }).select("_id");
-    const progressIds = progresses.map((p) => p._id);
+    const { userId } = req.params;
 
-    // Tìm notification theo progress
-    const notifications = await Notification.find({
-      progress_id: { $in: progressIds },
-    }).populate("progress_id");
+    // Đảm bảo người yêu cầu là chính người dùng đó, hoặc là coach/admin.
+    if (req.user.id !== userId && req.user.role === 'user') {
+      return res.status(403).json({ message: 'Bạn không có quyền xem thông báo của người dùng này.' });
+    }
+
+    const notifications = await Notification.find({ user_id: userId })
+      .populate('progress_id') 
+      .sort({ createdAt: -1 }); 
 
     res.status(200).json(notifications);
+
   } catch (err) {
-    res.status(500).json({ error: "Server error", details: err.message });
+    console.error("Lỗi khi lấy thông báo của người dùng:", err.message);
+    res.status(500).json({ error: "Lỗi máy chủ", details: err.message });
   }
 };
 // ✅ API: Coach xem tất cả học viên mình quản lý và thông tin tiến trình
