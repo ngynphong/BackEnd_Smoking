@@ -3579,6 +3579,102 @@
                 }
             }
         },
+        "/api/notifications/mark-read": {
+            "put": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Mark Read Notifiactions",
+                "description": "",
+                "operationId": "putapinotificationsmarkread",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notifications/my-students-progress": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "my-students-progress",
+                "description": "",
+                "operationId": "getapinotificationsmystudentsprogress",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/notifications/user/{userId}": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Notification"
+                ],
+                "summary": "Get Notifications By User",
+                "description": "",
+                "operationId": "getapinotificationsuseruserId",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/subscriptions/{id}": {
             "get": {
                 "security": [
