@@ -3352,6 +3352,11 @@
         },
         "/api/progress/plan/{id}/money-saved": {
             "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
                 "tags": [
                     "Progress"
                 ],
