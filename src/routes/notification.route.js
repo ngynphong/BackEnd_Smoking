@@ -34,6 +34,8 @@ notificationRouter.get(
   notificationController.getNotificationById
 );
 
+notificationRouter.put('/mark-read', validateToken, notificationController.markAsRead);
+
 // [PUT] Cập nhật thông báo
 notificationRouter.put(
   "/:id",
@@ -50,6 +52,7 @@ notificationRouter.delete(
   notificationController.deleteNotification
 );
 
+
 // [GET] Lấy tất cả thông báo của user theo tiến trình
 notificationRouter.get(
   "/user/:userId",
@@ -57,5 +60,6 @@ notificationRouter.get(
   checkRole(["user", "coach", "admin"]),
   notificationController.getNotificationsByUser
 );
+
 
 module.exports = notificationRouter;

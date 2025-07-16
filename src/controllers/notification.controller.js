@@ -178,3 +178,21 @@ exports.getMyStudentsWithProgress = async (req, res) => {
       .json({ message: "Error fetching students", error: err.message });
   }
 };
+
+exports.markAsRead = async (req, res) => {
+  try {
+    await Notification.updateMany(
+      {
+        user_id: req.user.id,
+        is_read: false
+      },
+      {
+        $set: { is_read: true }
+      }
+    );
+
+    res.status(200).json({ message: "Thông báo đã được đánh dấu là đã đọc" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi đánh dấu thông báo là đã đọc", error });
+  }
+};
