@@ -33,6 +33,9 @@ const webhookRouter = require("./routes/webhook.route.js");
 const taskRouter = require("./routes/task.route.js");
 const packageRouter = require("./routes/package.routes");
 const chatRouter = require("./routes/chat.route.js");
+const cravingLogRouter = require("./routes/cravingLog.route.js");
+const { startPredictionJob } = require('./jobs/riskPredictor.job.js'); // Import job
+
 
 const whiteList = [
   "http://localhost:5173",
@@ -118,5 +121,6 @@ app.use(async (err, req, res, next) => {
 });
 
 app.listen(port, () =>
-  console.log(`Server is running on http://localhost:${port}`)
+  console.log(`Server is running on http://localhost:${port}`),
+  startPredictionJob()
 );
