@@ -1857,10 +1857,19 @@
                 "tags": [
                     "Badge"
                 ],
-                "summary": "Get bagdes LeaderBoard",
+                "summary": "Get LeaderBoard",
                 "description": "",
                 "operationId": "getapibadgesleaderboard",
-                "parameters": [],
+                "parameters": [                   
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "badge_count"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful response",

@@ -1,6 +1,7 @@
 const Badge = require('../models/badge.model');
 const UserBadge = require('../models/userBadge.model');
-
+const User = require('../models/user.model');
+const getUserProgressStats = require('../utils/userStats');
 // Tạo badge
 module.exports.createBadge = async (req, res) => {
     try {
@@ -86,40 +87,119 @@ module.exports.getAllBadgesWithUserStatus = async (req, res) => {
 };
 
 module.exports.getBadgeLeaderBoard = async (req, res) => {
+    // Lấy 'type' từ query, mặc định là 'points' nếu không được cung cấp
+    const { type = 'points' } = req.query;
+    const limit = parseInt(req.query.limit) || 10; // Giới hạn số lượng, mặc định 10
+
+    let leaderboard = [];
+
     try {
-        const userBadges = await UserBadge.find().populate('badge_id').populate('user_id');
-        const leaderBoardMap = {};
+        console.log(`[Leaderboard] Bắt đầu tạo bảng xếp hạng loại: ${type}`);
 
-        userBadges.forEach(ub => {
-            const userId = ub.user_id;
-            const badge = ub.badge_id;
+        switch (type) {
+            case 'no_smoke_days':
+                const usersForSmokeDays = await User.find({ role: 'user' }, 'name avatar_url');
+                let smokeDaysLeaderboard = [];
+                for (const user of usersForSmokeDays) {
+                    const stats = await getUserProgressStats(user._id);
+                    smokeDaysLeaderboard.push({
+                        user: user,
+                        score: stats.consecutive_no_smoke_days || 0
+                    });
+                }
+                leaderboard = smokeDaysLeaderboard.sort((a, b) => b.score - a.score).slice(0, limit);
+                break;
 
-            if (!leaderBoardMap[userId]) {
-                leaderBoardMap[userId] = {
-                    userId: ub.user_id,
-                    name: ub.user_id.name,
-                    avatar: ub.user_id.avatar_url,
-                    badgeCount: 0,
-                    totalPoints: 0,
-                    badges: []
-                };
-            }
+            case 'money_saved':
+                const usersForMoney = await User.find({ role: 'user' }, 'name avatar_url');
+                let moneyLeaderboard = [];
+                for (const user of usersForMoney) {
+                    const stats = await getUserProgressStats(user._id);
+                    moneyLeaderboard.push({
+                        user: user,
+                        score: Math.round(stats.total_money_saved) || 0
+                    });
+                }
+                leaderboard = moneyLeaderboard.sort((a, b) => b.score - a.score).slice(0, limit);
+                break;
 
-            leaderBoardMap[userId].badgeCount += 1;
-            leaderBoardMap[userId].totalPoints += badge.point_value || 0;
-            leaderBoardMap[userId].badges.push({
-                badge_id: badge.id,
-                name: badge.name,
-                point_value: badge.point_value,
-            });
-        });
+            case 'badge_count':
+                leaderboard = await UserBadge.aggregate([
+                    { $group: { _id: "$user_id", score: { $sum: 1 } } },
+                    { $sort: { score: -1 } },
+                    { $limit: limit },
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "user"
+                        }
+                    },
+                    { $unwind: "$user" },
+                    {
+                        $project: {
+                            _id: 0,
+                            score: 1,
+                            "user._id": "$user._id",
+                            "user.name": "$user.name",
+                            "user.avatar_url": "$user.avatar_url"
+                        }
+                    }
+                ]);
+                break;
 
-        const leaderboard = Object.values(leaderBoardMap).sort((a, b) => b.totalPoints - a.totalPoints);
+            // Case 'points' hoặc trường hợp mặc định sẽ chạy logic cũ của bạn
+            case 'points':
+            default:
+                leaderboard = await UserBadge.aggregate([
+                    // Join với collection 'badges' để lấy point_value
+                    {
+                        $lookup: {
+                            from: "badges",
+                            localField: "badge_id",
+                            foreignField: "_id",
+                            as: "badgeInfo"
+                        }
+                    },
+                    { $unwind: "$badgeInfo" },
+                    // Gom nhóm theo user_id và tính tổng điểm
+                    {
+                        $group: {
+                            _id: "$user_id",
+                            score: { $sum: "$badgeInfo.point_value" }
+                        }
+                    },
+                    { $sort: { score: -1 } },
+                    { $limit: limit },
+                    // Join với collection 'users' để lấy thông tin user
+                    {
+                        $lookup: {
+                            from: "users",
+                            localField: "_id",
+                            foreignField: "_id",
+                            as: "user"
+                        }
+                    },
+                    { $unwind: "$user" },
+                    {
+                        $project: {
+                            _id: 0,
+                            score: 1,
+                            "user._id": "$user._id",
+                            "user.name": "$user.name",
+                            "user.avatar_url": "$user.avatar_url"
+                        }
+                    }
+                ]);
+                break;
+        }
 
         res.status(200).json(leaderboard);
+
     } catch (error) {
-        console.error('Error generating leaderboard:', error.message);
-        res.status(500).json({ message: 'Failed to generate leaderboard', error: error.message });
+        console.error(`Lỗi khi tạo bảng xếp hạng loại '${type}':`, error);
+        res.status(500).json({ message: "Lỗi máy chủ khi tạo bảng xếp hạng", error: error.message });
     }
 };
 
