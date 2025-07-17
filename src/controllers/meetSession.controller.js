@@ -1,5 +1,6 @@
 const MeetSession = require('../models/meetSesstion.model');
 const User = require('../models/user.model');
+const CoachProfile = require('../models/coachProfile.model');
 
 // 1. User đặt lịch hẹn với coach
 module.exports.bookSession = async (req, res) => {
@@ -58,6 +59,16 @@ module.exports.updateSessionStatus = async (req, res) => {
         if (!['accepted', 'rejected', 'completed'].includes(status)) {
             return res.status(400).json({ message: 'Invalid status' });
         }
+        // Kiểm tra nếu status được cập nhật thành 'completed'
+        if (status === 'completed' && session.status !== 'completed') {
+            // Tìm và cập nhật coach profile
+            const coachProfile = await CoachProfile.findOne({ coach_id });
+            if (coachProfile) {
+                coachProfile.total_sessions = (coachProfile.total_sessions || 0) + 1;
+                await coachProfile.save();
+            }
+        }
+        
         session.status = status;
 
         if (meet_link) session.meet_link = meet_link;
