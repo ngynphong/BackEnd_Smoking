@@ -10,5 +10,6 @@ badgeRouter.get('/', validateToken, checkRole(['admin', 'coach']), badgeControll
 badgeRouter.get('/user/:id', validateToken, badgeController.getAllBadgesWithUserStatus);
 badgeRouter.get('/leaderboard', badgeController.getBadgeLeaderBoard);
 badgeRouter.get('/user-stats', checkRole(['admin', 'coach']), badgeController.getBadgeStats);
+badgeRouter.get('/progress', validateToken, badgeController.getBadgeProgress);
 
 module.exports = badgeRouter;

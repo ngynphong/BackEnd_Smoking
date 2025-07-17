@@ -1914,6 +1914,35 @@
                 }
             }
         },
+        "/api/badges/progress": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Badge"
+                ],
+                "summary": "Get badge progress",
+                "description": "",
+                "operationId": "getapibadgesprogress",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/user-badges/create": {
             "post": {
                 "security": [

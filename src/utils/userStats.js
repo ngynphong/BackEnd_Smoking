@@ -1,4 +1,5 @@
 const Progress = require('../models/progress.model');
+const UserBadge = require('../models/userBadge.model');
 
 const getUserProgressStats = async (user_id) => {
     const progresses = await Progress.find({ user_id }).sort({ date: 1 });
@@ -39,6 +40,9 @@ const getUserProgressStats = async (user_id) => {
         total_money_saved += p.money_saved;
     });
 
+    // Đếm tổng số huy hiệu người dùng đã có
+    const total_badges_earned = await UserBadge.countDocuments({ user_id });
+
     if (firstDate) {
         const today = new Date().setHours(0, 0, 0, 0);
         days_since_start = Math.floor((today - firstDate) / (1000 * 60 * 60 * 24)) + 1;
@@ -48,7 +52,8 @@ const getUserProgressStats = async (user_id) => {
         total_days_no_smoke,
         total_money_saved,
         days_since_start,
-        consecutive_no_smoke_days: maxStreak
+        consecutive_no_smoke_days: maxStreak,
+        total_badges_earned
     };
 };
 

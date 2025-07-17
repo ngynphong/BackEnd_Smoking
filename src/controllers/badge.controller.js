@@ -2,6 +2,7 @@ const Badge = require('../models/badge.model');
 const UserBadge = require('../models/userBadge.model');
 const User = require('../models/user.model');
 const getUserProgressStats = require('../utils/userStats');
+
 // Tạo badge
 module.exports.createBadge = async (req, res) => {
     try {
@@ -246,5 +247,68 @@ module.exports.getBadgeStats = async (req, res) => {
         res.status(200).json(result);
     } catch (error) {
         res.status(500).json({ message: 'Error getting badge stats', error: error.message });
+    }
+};
+
+exports.getBadgeProgress = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // 1. Lấy tất cả các chỉ số hiện tại của người dùng
+        const userStats = await getUserProgressStats(userId);
+
+        // 2. Lấy tất cả huy hiệu có trong hệ thống và huy hiệu người dùng đã có
+        const [allBadges, earnedUserBadges] = await Promise.all([
+            Badge.find(),
+            UserBadge.find({ user_id: userId }).select('badge_id')
+        ]);
+
+        // Tạo một Set chứa ID của các huy hiệu đã có để tra cứu nhanh hơn
+        const earnedBadgeIds = new Set(earnedUserBadges.map(ub => ub.badge_id.toString()));
+
+        const badgeProgressList = [];
+
+        // Biểu thức chính quy để phân tích chuỗi điều kiện
+        const conditionRegex = /(\w+)\s*([>=]+)\s*(\d+)/;
+
+        for (const badge of allBadges) {
+            // 3. Bỏ qua nếu huy hiệu đã được nhận
+            if (earnedBadgeIds.has(badge._id.toString())) {
+                continue;
+            }
+
+            const match = badge.condition.match(conditionRegex);
+
+            // 4. Nếu điều kiện của huy hiệu có thể phân tích được
+            if (match) {
+                const metricName = match[1]; // vd: 'total_money_saved'
+                const targetValue = parseInt(match[3], 10); // vd: 100000
+
+                // Lấy giá trị hiện tại của người dùng tương ứng với chỉ số của huy hiệu
+                const currentValue = userStats[metricName];
+
+                if (currentValue !== undefined && targetValue > 0) {
+                    // 5. Tính toán tiến độ
+                    const progressPercent = Math.min(100, Math.floor((currentValue / targetValue) * 100));
+
+                    badgeProgressList.push({
+                        badge_id: badge._id,
+                        name: badge.name,
+                        tier: badge.tier,
+                        url_image: badge.url_image,
+                        condition: badge.condition,
+                        current_value: Math.round(currentValue),
+                        target_value: targetValue,
+                        progress_percent: progressPercent
+                    });
+                }
+            }
+        }
+
+        res.status(200).json(badgeProgressList);
+
+    } catch (error) {
+        console.error("Lỗi khi lấy tiến trình huy hiệu:", error);
+        res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
     }
 };
