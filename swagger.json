@@ -3397,6 +3397,44 @@
                 }
             }
         },
+        "/api/progress/plan/{planId}/smoking-stats": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Progress"
+                ],
+                "summary": "Get Smoking stats",
+                "description": "",
+                "operationId": "getapiprogressplanplanIdsmokingstats",
+                "parameters": [
+                    {
+                        "name": "planId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/notifications": {
             "post": {
                 "security": [

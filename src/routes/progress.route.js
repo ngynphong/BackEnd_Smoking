@@ -64,6 +64,12 @@ progressRouter.get(
 );
 
 progressRouter.get(
+  "/plan/:planId/smoking-stats",
+  validateToken,
+  progressController.getPlanSmokingStats
+);
+
+progressRouter.get(
   "/consecutive-no-smoke/:id",
   validateToken,
   progressController.getConsecutiveNoSmokeDays

@@ -391,3 +391,71 @@ exports.getTotalMoneySavedInPlan = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+exports.getPlanSmokingStats = async (req, res) => {
+  try {
+    const { planId } = req.params;
+    const userId = req.user.id; // Lấy từ token để đảm bảo an toàn
+
+    // 1. Lấy thông tin kế hoạch để xác thực và lấy user_id
+    const plan = await QuitPlan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({ message: "Không tìm thấy kế hoạch." });
+    }
+
+    // 2. Kiểm tra quyền truy cập
+    if (req.user.role === 'user' && plan.user_id.toString() !== userId) {
+      return res.status(403).json({ message: "Bạn không có quyền truy cập thông tin này." });
+    }
+
+    // 3. Lấy trạng thái hút thuốc ban đầu của người dùng để tính toán
+    const smokingStatus = await SmokingStatus.findOne({ user_id: plan.user_id }).sort({ createdAt: -1 });
+    if (!smokingStatus) {
+      return res.status(400).json({ message: "Không tìm thấy trạng thái hút thuốc ban đầu của người dùng." });
+    }
+
+    // 4. Lấy tất cả các stage thuộc kế hoạch này
+    const stages = await Stage.find({ plan_id: planId });
+    const stageIds = stages.map(stage => stage._id);
+
+    // 5. Tính tổng số điếu thuốc THỰC TẾ đã hút trong tất cả các stage
+    const aggregateResult = await Progress.aggregate([
+      {
+        $match: {
+          user_id: plan.user_id,
+          stage_id: { $in: stageIds }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalActuallySmoked: { $sum: "$cigarettes_smoked" },
+          // Đếm số ngày đã có ghi nhận progress
+          daysRecorded: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const totalActuallySmoked = aggregateResult.length > 0 ? aggregateResult[0].totalActuallySmoked : 0;
+    const daysRecorded = aggregateResult.length > 0 ? aggregateResult[0].daysRecorded : 0;
+
+    // 6. Tính số điếu thuốc DỰ KIẾN sẽ hút nếu không cai
+    // Lấy số ngày đã ghi nhận progress * số điếu thuốc hút mỗi ngày lúc ban đầu
+    const totalExpectedSmoked = daysRecorded * (smokingStatus.cigarettes_per_day || 0);
+
+    // 7. Tính số điếu thuốc đã GIẢM được
+    const totalCigarettesReduced = Math.max(0, totalExpectedSmoked - totalActuallySmoked);
+
+    res.status(200).json({
+      plan_id: planId,
+      user_id: plan.user_id,
+      total_cigarettes_smoked: totalActuallySmoked,
+      total_cigarettes_expected: totalExpectedSmoked,
+      total_cigarettes_reduced: totalCigarettesReduced
+    });
+
+  } catch (error) {
+    console.error("Lỗi khi lấy thống kê kế hoạch hút thuốc:", error);
+    res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
+  }
+};
