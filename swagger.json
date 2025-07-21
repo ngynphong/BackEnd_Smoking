@@ -5199,6 +5199,50 @@
                     }
                 }
             }
+        },
+        "/api/relapse-events": {
+            "post": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Relapse events"
+                ],
+                "summary": "Ghi nhan su kien hut thuoc",
+                "description": "",
+                "operationId": "postapirelapseevents",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "example": {
+                                    "cigarettes_smoked": 5,
+                                    "activity": "stressful_work",
+                                    "emotion": "stressed"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -5291,6 +5335,10 @@
         },
         {
             "name": "ChatBotAI",
+            "description": ""
+        },
+        {
+            "name": "Relapse events",
             "description": ""
         }
     ]

@@ -48,20 +48,20 @@ exports.createProgress = async (req, res) => {
     const inputDate = new Date(date);
 
     // Check đã có progress trong cùng ngày chưa
-    // const existing = await Progress.findOne({
-    //   user_id: finalUserId,
-    //   stage_id,
-    //   date: {
-    //     $gte: new Date(inputDate.setHours(0, 0, 0, 0)),
-    //     $lte: new Date(inputDate.setHours(23, 59, 59, 999)),
-    //   },
-    // });
+    const existing = await Progress.findOne({
+      user_id: finalUserId,
+      stage_id,
+      date: {
+        $gte: new Date(inputDate.setHours(0, 0, 0, 0)),
+        $lte: new Date(inputDate.setHours(23, 59, 59, 999)),
+      },
+    });
 
-    // if (existing) {
-    //   return res
-    //     .status(400)
-    //     .json({ message: "Đã có tiến trình được ghi nhận trong ngày này" });
-    // }
+    if (existing) {
+      return res
+        .status(400)
+        .json({ message: "Đã có tiến trình được ghi nhận trong ngày này" });
+    }
 
     const smokingStatus = await SmokingStatus.findOne({
       user_id: finalUserId,

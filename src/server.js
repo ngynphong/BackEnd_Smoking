@@ -33,9 +33,8 @@ const webhookRouter = require("./routes/webhook.route.js");
 const taskRouter = require("./routes/task.route.js");
 const packageRouter = require("./routes/package.routes");
 const chatRouter = require("./routes/chat.route.js");
-const cravingLogRouter = require("./routes/cravingLog.route.js");
 const { startPredictionJob } = require('./jobs/riskPredictor.job.js'); // Import job
-
+const relapseEventRouter = require("./routes/relapseEvent.route.js");
 
 const whiteList = [
   "http://localhost:5173",
@@ -96,6 +95,7 @@ app.use("/api/payments/webhook", webhookRouter);
 app.use("/api/tasks", taskRouter);
 app.use("/api/packages", packageRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/relapse-events", relapseEventRouter);
 
 // Swagger documentation
 const swaggerDocument = require("../swagger.json");

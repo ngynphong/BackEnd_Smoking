@@ -4,6 +4,7 @@ const User = require('../models/user.model');
 const Notification = require('../models/notificaltion.model');
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:5001';
+// const AI_SERVICE_URL ='http://127.0.0.1:5001';
 const RISK_THRESHOLD = 0.7; // Ngưỡng nguy cơ
 
 const motivationMessages = [
@@ -46,27 +47,40 @@ const job = async () => {
             });
 
             const risk = response.data.risk_score;
+            console.log(`[Cron Job] Nguy cơ tái nghiện cho user ${user._id}: ${risk}`);
 
             if (risk > RISK_THRESHOLD) {
-                // Chuyển đổi điểm số nguy cơ thành phần trăm
                 const riskPercentage = Math.round(risk * 100);
+                console.log(`[Cron Job] Nguy cơ cao (${riskPercentage}%) cho user ${user._id}. Lấy thêm insight...`);
 
-                // Log thông tin chi tiết hơn
-                console.log(`[Cron Job] Nguy cơ cao (${riskPercentage}%) cho user ${user._id}. Gửi thông báo.`);
+                let insightMessage = "Hãy chú ý đến các thói quen của bạn nhé."; // Mặc định
 
-                // Chọn ngẫu nhiên một thông điệp
+                try {                   
+                    // Bước 2: Nếu nguy cơ cao, gọi thêm API /insight
+                    const insightResponse = await axios.get(`${AI_SERVICE_URL}/insight/${user._id}`);
+                    const insights = insightResponse.data.insights; // vd: ["khi uống cà phê", "vào buổi sáng"]
+
+                    if (insights && insights.length > 0) {
+                        // Ghép các insight lại thành một câu hoàn chỉnh
+                        insightMessage = `AI của chúng tôi nhận thấy bạn thường có nguy cơ cao ${insights.join(" và ")}.`;
+                    }                  
+
+                } catch (insightError) {
+                    console.error(`[Cron Job] Không lấy được insight cho user ${user._id}:`, insightError.message);
+                }
+
                 const randomMessage = motivationMessages[Math.floor(Math.random() * motivationMessages.length)];
 
-                // Tạo thông báo mới, bao gồm cả phần trăm nguy cơ
-                const finalMessage = `AI dự báo khả năng bạn tái nghiện của bạn lúc này là khoảng ${riskPercentage}%. ${randomMessage}`;
+                // Bước 3: Xây dựng thông báo cuối cùng, kết hợp cả 3 yếu tố
+                const finalMessage = `${insightMessage} Khả năng tái nghiện của bạn lúc này là khoảng ${riskPercentage}%. ${randomMessage}`;
 
-                // Tạo thông báo trong DB
                 await Notification.create({
                     user_id: user._id,
-                    message: finalMessage, // Sử dụng thông báo đã được cá nhân hóa
+                    message: finalMessage,
                     type: 'ai_intervention'
                 });
             }
+
         } catch (error) {
             if (error.response && error.response.status === 404) {
                 console.log(`[Cron Job] Bỏ qua user ${user._id}: Chưa có mô hình để dự báo.`);

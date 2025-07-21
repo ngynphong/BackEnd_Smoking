@@ -3,7 +3,7 @@ const axios = require('axios');
 
 // Địa chỉ của AI service, bạn có thể đặt trong file .env
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:5001';
-
+// const AI_SERVICE_URL ='http://127.0.0.1:5001';
 /**
  * Gửi yêu cầu huấn luyện mô hình cho một user cụ thể đến Python AI service.
  * Đây là một lệnh "fire-and-forget", không cần chờ kết quả.
