@@ -1860,7 +1860,7 @@
                 "summary": "Get LeaderBoard",
                 "description": "",
                 "operationId": "getapibadgesleaderboard",
-                "parameters": [                   
+                "parameters": [
                     {
                         "name": "type",
                         "in": "query",
@@ -5243,6 +5243,35 @@
                     }
                 }
             }
+        },
+        "/api/dashboard/statistics": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Admin Dashboard"
+                ],
+                "summary": "Dashboard",
+                "description": "",
+                "operationId": "getapidashboardstatistics",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     },
     "components": {
@@ -5339,6 +5368,10 @@
         },
         {
             "name": "Relapse events",
+            "description": ""
+        },
+        {
+            "name": "Admin Dashboard",
             "description": ""
         }
     ]
