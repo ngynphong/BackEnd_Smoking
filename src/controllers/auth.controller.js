@@ -7,6 +7,8 @@ const crypto = require('crypto');
 const transporter = require('../configs/emailConfig');
 const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const Subscription = require('../models/subscription.model');
+const Package = require('../models/package.model');
 //Create token
 const maxAge = 3 * 24 * 60 * 60;
 const createToken = (user) => {
@@ -47,10 +49,31 @@ module.exports.register = async (req, res) => {
             email,
             password,
             avatar_url,
-            vertificationToken
+            vertificationToken,
+            membership: 'free'
         });
 
         await newuser.save();
+
+        // Tìm gói free trong Package collection
+        const freePackage = await Package.findOne({ name: 'free' });
+        if (!freePackage) {
+            throw new Error('Free package not found');
+        }
+
+        // Tạo subscription mới cho user với gói free
+        const newSubscription = new Subscription({
+            user_id: newuser._id,
+            package_id: freePackage._id,
+            name: freePackage.name,
+            price: freePackage.price,
+            start_date: new Date(),
+            end_date: null, // Gói free thường không có ngày hết hạn
+            status: 'active'
+        });
+
+        await newSubscription.save();
+
         // Tạo link xác thực
         const verificationLink = `http://localhost:${process.env.VITE_PORT}/login/${vertificationToken}`;// sẽ sửa lại verificationLink khi có front-end fogetpassword
         // Gửi email xác thực
@@ -96,7 +119,13 @@ module.exports.register = async (req, res) => {
             console.log('Email sent:', info.response);
         })
 
-        return res.status(201).json({ message: 'User created successfully, please check your email to verify your email account' });
+        return res.status(201).json({
+            message: 'User created successfully, please check your email to verify your email account',
+            subscription: {
+                name: freePackage.name,
+                status: 'active'
+            }
+        });
 
     } catch (error) {
         return res.status(500).json({ message: error.message });
@@ -497,9 +526,30 @@ module.exports.googleAuth = async (req, res) => {
                 avatar_url: payload.picture,
                 googleId: payload.sub,
                 isVerified: payload.email_verified,
-                role: 'user'
+                role: 'user',
+                membership: 'free'
             });
             await user.save();
+
+            // Tìm gói free trong Package collection
+            const freePackage = await Package.findOne({ name: 'free' });
+            if (!freePackage) {
+                throw new Error('Free package not found');
+            }
+
+            // Tạo subscription mới cho user với gói free
+            const newSubscription = new Subscription({
+                user_id: user._id,
+                package_id: freePackage._id,
+                name: freePackage.name,
+                price: freePackage.price,
+                start_date: new Date(),
+                end_date: null, // Gói free không có ngày hết hạn
+                status: 'active'
+            });
+
+            await newSubscription.save();
+
         } else if (!user.googleId) {
             // Update existing user's Google-related info
             user.googleId = payload.sub;
@@ -528,6 +578,7 @@ module.exports.googleAuth = async (req, res) => {
                 avatar_url: user.avatar_url,
                 role: user.role,
                 isVerified: user.isVerified,
+                membership: user.membership,
                 token: token
             }
         });

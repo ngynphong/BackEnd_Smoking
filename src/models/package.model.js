@@ -6,7 +6,7 @@ const packageSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: true, // Tên gói phải là duy nhất
-        enum: ['free', 'plus', 'premium'] // Hoặc các gói khác của bạn
+        // enum: ['free', 'plus', 'premium'] // Hoặc các gói khác của bạn
     },
     price: {
         type: Number,
@@ -26,6 +26,10 @@ const packageSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
+    is_active: {
+        type: Boolean,
+        default: true // Mặc định khi tạo mới, gói luôn ở trạng thái hoạt động
+    }
 
 }, {
     timestamps: true

@@ -4936,6 +4936,35 @@
                 }
             }
         },
+        "/api/packages/admin/all": {
+            "get": {
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Package"
+                ],
+                "summary": "Get All Package For Admin",
+                "description": "",
+                "operationId": "getapipackagesadminall",
+                "parameters": [],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "example": {}
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/packages/{id}": {
             "get": {
                 "security": [
