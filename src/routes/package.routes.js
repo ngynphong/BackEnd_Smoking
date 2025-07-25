@@ -10,6 +10,9 @@ packageRouter.post('/', validateToken, checkRole(['admin']), packageController.c
 // READ ALL: GET /api/packages
 packageRouter.get('/', packageController.getAllPackages);
 
+// READ ALL FOR ADMIN: GET /api/packages
+packageRouter.get('/admin/all', validateToken, checkRole(['admin']), packageController.getAllPackagesForAdmin);
+
 // READ ONE: GET /api/packages/:id
 packageRouter.get('/:id', validateToken, packageController.getPackageById);
 

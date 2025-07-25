@@ -49,7 +49,7 @@ module.exports.createPackage = async (req, res) => {
 // --- 2. READ ALL: Lấy tất cả các gói ---
 module.exports.getAllPackages = async (req, res) => {
     try {
-        const packages = await Package.find();
+        const packages = await Package.find({ is_active: true }); 
         res.status(200).json({
             message: 'Lấy danh sách gói thành công!',
             count: packages.length,
@@ -125,22 +125,41 @@ module.exports.deletePackage = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Tìm và xóa gói
-        const deletedPackage = await Package.findByIdAndDelete(id);
+        const packageItem = await Package.findById(id);
 
-        if (!deletedPackage) {
-            return res.status(404).json({ message: 'Không tìm thấy gói để xóa.' });
+        const deactivatedPackage = await Package.findByIdAndUpdate(
+            id,
+            { $set: { is_active: !packageItem.is_active } },
+            { new: true }
+        );
+
+        if (!deactivatedPackage) {
+            return res.status(404).json({ message: 'Không tìm thấy gói để vô hiệu hóa.' });
         }
 
         res.status(200).json({
-            message: 'Xóa gói thành công!',
-            package: deletedPackage, // Trả về document đã xóa
+            message: 'Khóa gói hoặc mở khóa gói thành công!',
+            package: deactivatedPackage, // Trả về document đã vô hiệu hóa
         });
     } catch (error) {
         if (error.kind === 'ObjectId') {
             return res.status(400).json({ message: 'ID gói không hợp lệ.' });
         }
         console.error('Lỗi khi xóa gói:', error);
+        res.status(500).json({ message: 'Lỗi máy chủ nội bộ.', error: error.message });
+    }
+};
+
+module.exports.getAllPackagesForAdmin = async (req, res) => {
+    try {
+        const packages = await Package.find();
+        res.status(200).json({
+            message: 'Lấy danh sách gói thành công!',
+            count: packages.length,
+            packages,
+        });
+    } catch (error) {
+        console.error('Lỗi khi lấy tất cả gói:', error);
         res.status(500).json({ message: 'Lỗi máy chủ nội bộ.', error: error.message });
     }
 };

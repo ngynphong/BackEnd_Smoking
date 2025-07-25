@@ -23,9 +23,10 @@ exports.createSubscription = async (req, res) => {
       end_date: { $gte: new Date() } // Kiểm tra gói còn hạn
     });
 
-    if (existingActiveSubscription) {
-      // Tùy chọn: Xử lý trường hợp người dùng đã có gói active
-      return res.status(400).json({ message: "Người dùng đã có gói đăng ký đang hoạt động." });
+    if (existingActiveSubscription && existingActiveSubscription.name !== 'free') {
+      return res.status(400).json({
+        message: "Bạn đã có gói đăng ký cao cấp đang hoạt động."
+      });
     }
 
     // 2. Tạo bản ghi Subscription mới với trạng thái 'pending'

@@ -9,6 +9,9 @@ const {
 } = require("../utils/progressStats");
 const getUserProgressStats = require("../utils/userStats");
 const { triggerTrainingForUser } = require("../services/ai.service");
+const TaskResult = require("../models/TaskResult.model"); // <-- Thêm import này
+const Notification = require("../models/notificaltion.model");
+
 // Helper: Kiểm tra quyền truy cập vào stage (dựa trên plan → user_id)
 const canAccessStage = async (user, stageId) => {
   const stage = await Stage.findById(stageId);
@@ -31,6 +34,45 @@ const canAccessStage = async (user, stageId) => {
   };
 };
 
+/**
+ * Xử lý logic khi một giai đoạn cần được "thử lại".
+ * @param {object} stage - Document của giai đoạn cần reset.
+ * @param {object} plan - Document của kế hoạch chứa giai đoạn đó.
+ */
+async function handleStageRetry(stage, plan) {
+  const previousAttempt = stage.attempt_number;
+  stage.attempt_number += 1; // Tăng số lần thử
+
+  // Xóa tất cả các TaskResult của lần thử trước
+  await TaskResult.deleteMany({
+    stage_id: stage._id,
+    user_id: plan.user_id,
+    attempt_number: previousAttempt
+  });
+
+  // Lưu lại giai đoạn đã cập nhật
+  await stage.save();
+  console.log(`[Stage Retry] Giai đoạn ${stage.title} của user ${plan.user_id} đã được làm mới, lần thử #${stage.attempt_number}`);
+
+  // Tạo thông báo cho người dùng
+  await Notification.create({
+    user_id: plan.user_id,
+    message: `Bạn đã vượt giới hạn thuốc cho giai đoạn "${stage.title}". Đừng lo, giai đoạn đã được làm mới để bạn bắt đầu lại. Cố lên!`,
+    type: 'stage_retry',
+    is_sent: true
+  });
+
+  // Tạo thông báo cho coach (nếu có)
+  if (plan.coach_id) {
+    await Notification.create({
+      user_id: plan.coach_id,
+      message: `Người dùng ${plan.user_id.name} đã cần thử lại giai đoạn "${stage.title}". Hãy vào xem và hỗ trợ họ nhé.`,
+      type: 'user_alert',
+      is_sent: true
+    });
+  }
+}
+
 // ✅ Create progress (User only for their stage)
 exports.createProgress = async (req, res) => {
   try {
@@ -41,7 +83,7 @@ exports.createProgress = async (req, res) => {
     if (!access.allowed) {
       return res.status(403).json({ message: "Access denied" });
     }
-
+    const currentStage = access.stage; 
     const isAdminOrCoach = ["admin", "coach"].includes(req.user.role);
     const finalUserId = isAdminOrCoach && user_id ? user_id : req.user.id;
 
@@ -84,7 +126,35 @@ exports.createProgress = async (req, res) => {
       cigarettes_smoked,
       health_status,
       money_saved,
+      attempt_number: currentStage.attempt_number
     });
+
+    const stage = await Stage.findById(stage_id).populate({ path: 'plan_id', populate: { path: 'user_id', select: 'name' } });
+    // Chỉ kiểm tra nếu coach có đặt giới hạn
+    if (stage && stage.cigarette_limit != null) {
+      // Tính tổng số điếu đã hút trong lần thử hiện tại của giai đoạn
+      const stats = await Progress.aggregate([
+        { $match: { stage_id: stage._id, user_id: stage.plan_id.user_id._id, attempt_number: currentStage.attempt_number } }, // Chỉ tính progress trong lần thử hiện tại
+        { $group: { _id: null, total: { $sum: "$cigarettes_smoked" } } }
+      ]);
+
+      const totalSmokedInAttempt = stats[0]?.total || 0;
+
+      // Kiểm tra nếu vượt ngưỡng
+      if (totalSmokedInAttempt > stage.cigarette_limit) {
+        await handleStageRetry(stage, stage.plan_id);
+      }
+      // Gửi cảnh báo nếu đạt 80%
+      else if (totalSmokedInAttempt >= stage.cigarette_limit * 0.8) {
+        await Notification.create({
+          user_id: stage.plan_id.user_id,
+          message: `Cảnh báo: Bạn đã sử dụng gần hết giới hạn thuốc cho giai đoạn "${stage.title}". Hãy thật cẩn thận nhé!`,
+          type: 'stage_warning',
+          is_sent: true
+        });
+      }
+    }
+
     await checkAndAwardBadges(finalUserId);
 
     triggerTrainingForUser(finalUserId);

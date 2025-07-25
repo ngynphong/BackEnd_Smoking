@@ -15,6 +15,10 @@ const progressSchema = new mongoose.Schema({
   cigarettes_smoked: { type: Number, default: 0 },
   health_status: { type: String },
   money_saved: { type: Number, default: 0 },
-});
+  attempt_number: {
+    type: Number,
+    required: true
+  }
+}, { timestamps: true });
 
 module.exports = mongoose.model("Progress", progressSchema);

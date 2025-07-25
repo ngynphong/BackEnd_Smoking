@@ -58,7 +58,7 @@ const userSchema = new mongoose.Schema({
     membership: {
         subscriptionType: {
             type: String,
-            enum: ['free', 'plus', 'premium'],
+            // enum: ['free', 'plus', 'premium'],
             default: 'free',
         },
         expiresAt: {

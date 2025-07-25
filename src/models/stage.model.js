@@ -31,6 +31,15 @@ const stageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    cigarette_limit: { // Giới hạn số điếu thuốc cho cả giai đoạn
+      type: Number,
+      required: false, // Không bắt buộc, coach có thể đặt hoặc không
+      min: 0
+    },
+    attempt_number: { // Theo dõi số lần thử lại
+      type: Number,
+      default: 1
+    }
   },
   { timestamps: true }
 );
