@@ -33,11 +33,12 @@ const webhookRouter = require("./routes/webhook.route.js");
 const taskRouter = require("./routes/task.route.js");
 const packageRouter = require("./routes/package.routes");
 const chatRouter = require("./routes/chat.route.js");
-const { startPredictionJob } = require('./jobs/riskPredictor.job.js'); // Import job
+const { startPredictionJob } = require("./jobs/riskPredictor.job.js"); // Import job
 const relapseEventRouter = require("./routes/relapseEvent.route.js");
 const dashboardRouter = require("./routes/dashboard.route.js");
-const { startStageCompletionJob } = require('./jobs/stageCompletion.job.js');
 
+const { startStageCompletionJob } = require('./jobs/stageCompletion.job.js');
+const financialGoalRouter = require("./routes/financialGoal.route.js");
 
 const whiteList = [
   "http://localhost:5173",
@@ -100,6 +101,7 @@ app.use("/api/packages", packageRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/relapse-events", relapseEventRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/financial-goals", financialGoalRouter);
 // Swagger documentation
 const swaggerDocument = require("../swagger.json");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -122,6 +124,7 @@ app.use(async (err, req, res, next) => {
       },
     });
 });
+
 
 app.listen(port, () =>
   console.log(`Server is running on http://localhost:${port}`),
