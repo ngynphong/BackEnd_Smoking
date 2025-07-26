@@ -36,6 +36,8 @@ const chatRouter = require("./routes/chat.route.js");
 const { startPredictionJob } = require('./jobs/riskPredictor.job.js'); // Import job
 const relapseEventRouter = require("./routes/relapseEvent.route.js");
 const dashboardRouter = require("./routes/dashboard.route.js");
+const { startStageCompletionJob } = require('./jobs/stageCompletion.job.js');
+
 
 const whiteList = [
   "http://localhost:5173",
@@ -123,5 +125,6 @@ app.use(async (err, req, res, next) => {
 
 app.listen(port, () =>
   console.log(`Server is running on http://localhost:${port}`),
-  startPredictionJob()
+  startPredictionJob(),
+  startStageCompletionJob()
 );
