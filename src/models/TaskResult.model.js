@@ -7,6 +7,7 @@ const taskResultSchema = new Schema(
     task_id: { type: Schema.Types.ObjectId, ref: "Task", required: true },
     stage_id: { type: Schema.Types.ObjectId, ref: "Stage", required: true },
     is_completed: { type: Boolean, default: false },
+    attempt_number: { type: Number, required: true }
   },
   { timestamps: true }
 );

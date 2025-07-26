@@ -94,10 +94,13 @@ module.exports.completeTask = async (req, res) => {
     const task = await Task.findById(task_id);
     if (!task) return res.status(404).json({ message: "Task không tồn tại" });
 
+    const stage = await Stage.findById(task.stage_id); // Cần lấy thông tin của stage
+    if (!stage) return res.status(404).json({ message: "Giai đoạn không tồn tại" });
+
     // 2. Cập nhật hoặc tạo mới taskResult
     const taskResult = await TaskResult.findOneAndUpdate(
-      { task_id, user_id },
-      { stage_id: task.stage_id, is_completed: true },
+      { task_id, user_id, stage_id: task.stage_id, attempt_number: stage.attempt_number }, // Thêm attempt_number vào query
+      { is_completed: true },
       { upsert: true, new: true }
     );
 

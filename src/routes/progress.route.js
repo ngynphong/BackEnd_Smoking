@@ -80,4 +80,11 @@ progressRouter.get(
   validateToken,
   progressController.getTotalMoneySavedInPlan
 );
+
+progressRouter.get(
+  '/plan/:planId/stage-charts',
+  validateToken,
+  progressController.getPlanStageChartsData
+);
+
 module.exports = progressRouter;
