@@ -2843,7 +2843,7 @@
                                     "plan_id": "683eb70c4d533a558f47884d",
                                     "title": "Giai đoạn 2: Bắt đầu cai",
                                     "description": "Ăn kẹo để giảm độ thèm thuốc",
-                                    "stage_number": 2,
+                                    "cigarette_limit": 5,
                                     "start_date": "2025-06-04T00:00:00.000Z",
                                     "end_date": "2025-06-10T00:00:00.000Z"
                                 }

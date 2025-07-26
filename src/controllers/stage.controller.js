@@ -25,6 +25,23 @@ exports.createStage = async (req, res) => {
   try {
     const { plan_id, title, description, start_date, end_date, cigarette_limit } = req.body;
 
+    // 1. Kiểm tra ngày bắt đầu phải trước ngày kết thúc
+    if (new Date(start_date) >= new Date(end_date)) {
+      return res.status(400).json({ message: "Ngày bắt đầu phải trước ngày kết thúc giai đoạn." });
+    }
+
+    // 2. Tìm giai đoạn cuối cùng của kế hoạch này để kiểm tra tính tuần tự
+    const lastStage = await Stage.findOne({ plan_id }).sort({ stage_number: -1 });
+
+    if (lastStage) {
+      // Nếu đã có giai đoạn trước đó, ngày bắt đầu của giai đoạn mới phải sau ngày kết thúc của giai đoạn cũ
+      if (new Date(start_date) <= new Date(lastStage.end_date)) {
+        return res.status(400).json({
+          message: `Ngày bắt đầu của giai đoạn mới (${new Date(start_date).toLocaleDateString('vi-VN')}) phải sau ngày kết thúc của giai đoạn trước đó (${new Date(lastStage.end_date).toLocaleDateString('vi-VN')}).`
+        });
+      }
+    }
+    
     const access = await canAccessPlan(req.user, plan_id);
 
     if (!access.allowed || (!access.isCoach && !access.isAdmin)) {
