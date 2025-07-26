@@ -41,6 +41,11 @@ const quitPlanSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    cloned_from_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "QuitPlan",
+      required: false, // Chỉ yêu cầu khi đây là một bản sao
+    },
   },
   { timestamps: true }
 );

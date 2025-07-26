@@ -316,6 +316,16 @@ exports.usePublicPlan = async (req, res) => {
         .status(404)
         .json({ message: "Kế hoạch công khai không tồn tại" });
 
+
+    const existingClone = await QuitPlan.findOne({
+      user_id: user_id,
+      cloned_from_id: plan_id
+    });
+
+    if (existingClone) {
+      return res.status(409).json({ message: "Bạn đã sao chép kế hoạch này rồi." });
+    }
+
     // 1. Tạo kế hoạch mới cho user
     const userPlan = await QuitPlan.create({
       user_id,
@@ -326,6 +336,7 @@ exports.usePublicPlan = async (req, res) => {
       image: publicPlan.image,
       is_public: false,
       status: "approved",
+      cloned_from_id: publicPlan._id
     });
 
     // 2. Clone tất cả các stage
@@ -340,6 +351,7 @@ exports.usePublicPlan = async (req, res) => {
         start_date: stage.start_date,
         end_date: stage.end_date,
         is_completed: false,
+        cigarette_limit: stage.cigarette_limit
       });
 
       // 3. Clone tất cả các task thuộc stage đó
