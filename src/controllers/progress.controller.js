@@ -529,3 +529,71 @@ exports.getPlanSmokingStats = async (req, res) => {
     res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
   }
 };
+
+exports.getPlanStageChartsData = async (req, res) => {
+  try {
+    const { planId } = req.params;
+
+    // 1. Lấy thông tin kế hoạch và người dùng
+    const plan = await QuitPlan.findById(planId);
+    if (!plan) {
+      return res.status(404).json({ message: "Không tìm thấy kế hoạch." });
+    }
+
+    const userId = plan.user_id;
+
+    // 2. Lấy thông tin hút thuốc ban đầu của người dùng
+    const smokingStatus = await SmokingStatus.findOne({ user_id: userId }).sort({ createdAt: -1 });
+    if (!smokingStatus) {
+      return res.status(404).json({ message: "Không tìm thấy trạng thái hút thuốc ban đầu của người dùng." });
+    }
+    const baselineCigarettesPerDay = smokingStatus.cigarettes_per_day || 0;
+
+    // 3. Lấy tất cả các giai đoạn của kế hoạch
+    const stages = await Stage.find({ plan_id: planId }).sort("stage_number").lean();
+
+    // 4. Lặp qua từng giai đoạn để tính toán dữ liệu
+    const chartData = await Promise.all(stages.map(async (stage) => {
+      const stats = await Progress.aggregate([
+        {
+          $match: {
+            stage_id: stage._id,
+            user_id: userId
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            total_cigarettes_smoked: { $sum: "$cigarettes_smoked" },
+            total_money_saved: { $sum: "$money_saved" },
+            days_recorded: { $sum: 1 } // Đếm số ngày đã ghi nhận
+          }
+        }
+      ]);
+
+      const stageStats = stats[0] || {}; // Lấy kết quả hoặc một object rỗng
+      const daysRecorded = stageStats.days_recorded || 0;
+      const totalSmoked = stageStats.total_cigarettes_smoked || 0;
+
+      // Tính toán số điếu thuốc dự kiến sẽ hút
+      const expectedSmoked = daysRecorded * baselineCigarettesPerDay;
+      // Tính toán số điếu thuốc đã tránh được
+      const avoidedSmoked = Math.max(0, expectedSmoked - totalSmoked);
+
+      return {
+        stage_id: stage._id,
+        stage_title: stage.title,
+        stage_number: stage.stage_number,
+        total_cigarettes_smoked: totalSmoked,
+        total_cigarettes_avoided: avoidedSmoked,
+        total_money_saved: Math.round(stageStats.total_money_saved) || 0,
+      };
+    }));
+
+    res.status(200).json(chartData);
+
+  } catch (error) {
+    console.error("Lỗi khi lấy dữ liệu biểu đồ giai đoạn:", error);
+    res.status(500).json({ message: "Lỗi máy chủ", error: error.message });
+  }
+};
