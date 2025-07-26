@@ -87,6 +87,22 @@ exports.createProgress = async (req, res) => {
     const isAdminOrCoach = ["admin", "coach"].includes(req.user.role);
     const finalUserId = isAdminOrCoach && user_id ? user_id : req.user.id;
 
+    const progressDate = new Date(date);
+    const stageStartDate = new Date(currentStage.start_date);
+    const stageEndDate = new Date(currentStage.end_date);
+
+    // 1. Đặt giờ về 0 để so sánh ngày cho chính xác
+    progressDate.setHours(0, 0, 0, 0);
+    stageStartDate.setHours(0, 0, 0, 0);
+    stageEndDate.setHours(0, 0, 0, 0);
+
+    // 2. Kiểm tra xem ngày ghi nhận có nằm trong khoảng thời gian của giai đoạn không
+    if (progressDate < stageStartDate || progressDate > stageEndDate) {
+      return res.status(400).json({
+        message: `Ngày ghi nhận tiến trình (${progressDate.toLocaleDateString('vi-VN')}) phải nằm trong khoảng thời gian của giai đoạn (từ ${stageStartDate.toLocaleDateString('vi-VN')} đến ${stageEndDate.toLocaleDateString('vi-VN')}).`
+      });
+    }
+
     const inputDate = new Date(date);
 
     // Check đã có progress trong cùng ngày chưa
