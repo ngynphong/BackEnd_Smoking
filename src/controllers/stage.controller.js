@@ -23,25 +23,42 @@ const canAccessPlan = async (user, planId) => {
 // ✅ Create Stage — Coach, Admin
 exports.createStage = async (req, res) => {
   try {
-    const { plan_id, title, description, start_date, end_date, cigarette_limit } = req.body;
+    const {
+      plan_id,
+      title,
+      description,
+      start_date,
+      end_date,
+      cigarette_limit,
+    } = req.body;
 
     // 1. Kiểm tra ngày bắt đầu phải trước ngày kết thúc
     if (new Date(start_date) >= new Date(end_date)) {
-      return res.status(400).json({ message: "Ngày bắt đầu phải trước ngày kết thúc giai đoạn." });
+      return res
+        .status(400)
+        .json({ message: "Ngày bắt đầu phải trước ngày kết thúc giai đoạn." });
     }
 
     // 2. Tìm giai đoạn cuối cùng của kế hoạch này để kiểm tra tính tuần tự
-    const lastStage = await Stage.findOne({ plan_id }).sort({ stage_number: -1 });
+    const lastStage = await Stage.findOne({ plan_id }).sort({
+      stage_number: -1,
+    });
 
     if (lastStage) {
       // Nếu đã có giai đoạn trước đó, ngày bắt đầu của giai đoạn mới phải sau ngày kết thúc của giai đoạn cũ
       if (new Date(start_date) <= new Date(lastStage.end_date)) {
         return res.status(400).json({
-          message: `Ngày bắt đầu của giai đoạn mới (${new Date(start_date).toLocaleDateString('vi-VN')}) phải sau ngày kết thúc của giai đoạn trước đó (${new Date(lastStage.end_date).toLocaleDateString('vi-VN')}).`
+          message: `Ngày bắt đầu của giai đoạn mới (${new Date(
+            start_date
+          ).toLocaleDateString(
+            "vi-VN"
+          )}) phải sau ngày kết thúc của giai đoạn trước đó (${new Date(
+            lastStage.end_date
+          ).toLocaleDateString("vi-VN")}).`,
         });
       }
     }
-    
+
     const access = await canAccessPlan(req.user, plan_id);
 
     if (!access.allowed || (!access.isCoach && !access.isAdmin)) {
@@ -81,38 +98,41 @@ exports.getStagesByPlan = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy kế hoạch." });
     }
 
-    
     // 1. Lấy danh sách các giai đoạn như bình thường
-    const stages = await Stage.find({ plan_id: planId }).sort("stage_number").lean(); // Dùng .lean() để tăng hiệu suất
+    const stages = await Stage.find({ plan_id: planId })
+      .sort("stage_number")
+      .lean(); // Dùng .lean() để tăng hiệu suất
     // 2. Lặp qua từng giai đoạn để tính toán và bổ sung thông tin
-    const stagesWithProgress = await Promise.all(stages.map(async (stage) => {
-      // Tính tổng số điếu thuốc đã hút trong lần thử hiện tại của giai đoạn
-      const stats = await Progress.aggregate([
-        {
-          // Lọc progress của đúng user, đúng stage, và chỉ tính từ lần "thử lại" gần nhất
-          $match: {
-            user_id: plan.user_id,
-            stage_id: stage._id,
-            attempt_number: stage.attempt_number // <-- Dùng attempt_number
-          }
-        },
-        {
-          // Nhóm lại và tính tổng
-          $group: {
-            _id: null,
-            totalSmoked: { $sum: "$cigarettes_smoked" }
-          }
-        }
-      ]);
+    const stagesWithProgress = await Promise.all(
+      stages.map(async (stage) => {
+        // Tính tổng số điếu thuốc đã hút trong lần thử hiện tại của giai đoạn
+        const stats = await Progress.aggregate([
+          {
+            // Lọc progress của đúng user, đúng stage, và chỉ tính từ lần "thử lại" gần nhất
+            $match: {
+              user_id: plan.user_id,
+              stage_id: stage._id,
+              attempt_number: stage.attempt_number, // <-- Dùng attempt_number
+            },
+          },
+          {
+            // Nhóm lại và tính tổng
+            $group: {
+              _id: null,
+              totalSmoked: { $sum: "$cigarettes_smoked" },
+            },
+          },
+        ]);
 
-      const totalSmokedInAttempt = stats[0]?.totalSmoked || 0;
+        const totalSmokedInAttempt = stats[0]?.totalSmoked || 0;
 
-      // 3. Trả về một object mới bao gồm thông tin cũ và thông tin mới
-      return {
-        ...stage,
-        total_cigarettes_smoked: totalSmokedInAttempt
-      };
-    }));
+        // 3. Trả về một object mới bao gồm thông tin cũ và thông tin mới
+        return {
+          ...stage,
+          total_cigarettes_smoked: totalSmokedInAttempt,
+        };
+      })
+    );
 
     res.status(200).json(stagesWithProgress);
   } catch (error) {
