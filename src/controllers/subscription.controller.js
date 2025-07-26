@@ -17,33 +17,50 @@ exports.createSubscription = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy gói này." });
     }
 
+    // Kiểm tra xem người dùng có gói cao cấp đang hoạt động không
     const existingActiveSubscription = await Subscription.findOne({
       user_id: userId,
       status: 'active',
-      end_date: { $gte: new Date() } // Kiểm tra gói còn hạn
+      name: { $ne: 'free' }, // Không phải gói free
+      end_date: { $gte: new Date() } // Và còn hạn
     });
 
-    if (existingActiveSubscription && existingActiveSubscription.name !== 'free') {
+    if (existingActiveSubscription) {
       return res.status(400).json({
         message: "Bạn đã có gói đăng ký cao cấp đang hoạt động."
       });
     }
 
-    // 2. Tạo bản ghi Subscription mới với trạng thái 'pending'
-    const newSubscription = new Subscription({
-      user_id: userId,
-      package_id: packageInfo._id,
-      name: packageInfo.name, // Lấy tên gói từ Package
-      price: packageInfo.price, // Lấy giá gói từ Package
-      status: "pending", // Mặc định là pending
-    });
+    // Tìm gói đăng ký hiện tại của người dùng (có thể là 'free' hoặc hết hạn)
+    let userSubscription = await Subscription.findOne({ user_id: userId });
 
-    const savedSubscription = await newSubscription.save();
-
-    res.status(201).json({
-      message: "Yêu cầu đăng ký gói đã được tạo thành công, đang chờ thanh toán.",
-      subscription: savedSubscription,
-    });
+    if (userSubscription) {
+      // Cập nhật gói đăng ký hiện có
+      userSubscription.package_id = packageInfo._id;
+      userSubscription.name = packageInfo.name;
+      userSubscription.price = packageInfo.price;
+      userSubscription.status = "pending";
+      // start_date và end_date sẽ được cập nhật sau khi thanh toán thành công
+      const savedSubscription = await userSubscription.save();
+      res.status(200).json({
+        message: "Gói đăng ký đã được cập nhật, đang chờ thanh toán.",
+        subscription: savedSubscription,
+      });
+    } else {
+      // Trường hợp người dùng chưa có bản ghi subscription nào (fallback)
+      const newSubscription = new Subscription({
+        user_id: userId,
+        package_id: packageInfo._id,
+        name: packageInfo.name,
+        price: packageInfo.price,
+        status: "pending",
+      });
+      const savedSubscription = await newSubscription.save();
+      res.status(201).json({
+        message: "Yêu cầu đăng ký gói đã được tạo thành công, đang chờ thanh toán.",
+        subscription: savedSubscription,
+      });
+    }
   } catch (err) {
     console.error("Lỗi khi tạo Subscription:", err);
     res.status(500).json({ message: "Lỗi máy chủ nội bộ.", error: err.message });
