@@ -105,21 +105,21 @@ module.exports.completeTask = async (req, res) => {
     );
 
     // 3. Kiểm tra xem tất cả task của stage này đã hoàn thành chưa
-    const allTasks = await Task.find({ stage_id: task.stage_id });
-    const totalTasks = allTasks.length;
+    // const allTasks = await Task.find({ stage_id: task.stage_id });
+    // const totalTasks = allTasks.length;
 
-    const completedResults = await TaskResult.find({
-      user_id,
-      stage_id: task.stage_id,
-      is_completed: true,
-    });
+    // const completedResults = await TaskResult.find({
+    //   user_id,
+    //   stage_id: task.stage_id,
+    //   is_completed: true,
+    // });
 
-    const completedCount = completedResults.length;
+    // const completedCount = completedResults.length;
 
-    if (totalTasks > 0 && completedCount === totalTasks) {
-      // Cập nhật Stage là đã hoàn thành
-      await Stage.findByIdAndUpdate(task.stage_id, { is_completed: true });
-    }
+    // if (totalTasks > 0 && completedCount === totalTasks) {
+    //   // Cập nhật Stage là đã hoàn thành
+    //   await Stage.findByIdAndUpdate(task.stage_id, { is_completed: true });
+    // }
 
     res.json({
       message: "Hoàn thành task thành công",
