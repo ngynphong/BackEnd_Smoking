@@ -179,6 +179,17 @@ exports.updateStage = async (req, res) => {
     const updated = await Stage.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });
+    if (req.body.is_completed === true) {
+      const stages = await Stage.find({ plan_id: stage.plan_id });
+
+      const allCompleted = stages.every((s) => s.is_completed === true);
+
+      if (allCompleted) {
+        await QuitPlan.findByIdAndUpdate(stage.plan_id, {
+          status: "completed",
+        });
+      }
+    }
 
     res.status(200).json(updated);
   } catch (error) {

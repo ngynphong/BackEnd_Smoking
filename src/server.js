@@ -37,8 +37,9 @@ const { startPredictionJob } = require("./jobs/riskPredictor.job.js"); // Import
 const relapseEventRouter = require("./routes/relapseEvent.route.js");
 const dashboardRouter = require("./routes/dashboard.route.js");
 
-const { startStageCompletionJob } = require('./jobs/stageCompletion.job.js');
+const { startStageCompletionJob } = require("./jobs/stageCompletion.job.js");
 const financialGoalRouter = require("./routes/financialGoal.route.js");
+const coachRequestModel = require("./routes/coachRequest.route.js");
 
 const whiteList = [
   "http://localhost:5173",
@@ -102,6 +103,7 @@ app.use("/api/chat", chatRouter);
 app.use("/api/relapse-events", relapseEventRouter);
 app.use("/api/dashboard", dashboardRouter);
 app.use("/api/financial-goals", financialGoalRouter);
+app.use("/api/coach-requests", coachRequestModel);
 // Swagger documentation
 const swaggerDocument = require("../swagger.json");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
@@ -125,9 +127,9 @@ app.use(async (err, req, res, next) => {
     });
 });
 
-
-app.listen(port, () =>
-  console.log(`Server is running on http://localhost:${port}`),
+app.listen(
+  port,
+  () => console.log(`Server is running on http://localhost:${port}`),
   startPredictionJob(),
   startStageCompletionJob()
 );

@@ -34,7 +34,7 @@ const quitPlanSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["approved"],
+      enum: ["approved", "completed"],
       default: "approved", // Mặc định luôn được duyệt khi tạo
     },
     is_public: {
