@@ -51,17 +51,12 @@ taskRouter.delete(
   taskController.deleteTask
 );
 
-taskRouter.post(
-  "/:id/complete",
-  validateToken,
-  taskController.completeTask
-);
+taskRouter.post("/:id/complete", validateToken, taskController.completeTask);
 
 taskRouter.get(
   "/stage/:id/completed",
   validateToken,
   taskController.getCompletedTasksByStage
 );
-
 
 module.exports = taskRouter;

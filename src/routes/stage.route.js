@@ -10,7 +10,12 @@ stageRouter.post(
   checkRole(["coach", "admin"]),
   stageController.createStage
 );
-
+stageRouter.get(
+  "/my",
+  validateToken,
+  checkRole(["coach"]),
+  stageController.getStagesByCoach
+);
 // 🔐 Get all stages for a quit plan — Owner, Coach, Admin
 stageRouter.get(
   "/plan/:planId",

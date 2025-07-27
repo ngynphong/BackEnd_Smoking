@@ -61,7 +61,9 @@ exports.getMyQuitPlanRequests = async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const myRequests = await RequestQuitPlan.find({ user_id: userId }).populate('coach_id', 'email name avatar_url').populate('user_id', 'email name avatar_url');
+    const myRequests = await RequestQuitPlan.find({ user_id: userId })
+      .populate("coach_id", "email name avatar_url")
+      .populate("user_id", "email name avatar_url");
 
     res.status(200).json(myRequests);
   } catch (error) {
@@ -280,7 +282,9 @@ exports.rejectQuitPlan = async (req, res) => {
 exports.getQuitPlanByUserId = async (req, res) => {
   try {
     const userId = req.params.id;
-    const plans = await QuitPlan.find({ user_id: userId }).populate('coach_id', 'email name avatar_url').populate('user_id', 'email name avatar_url');
+    const plans = await QuitPlan.find({ user_id: userId })
+      .populate("coach_id", "email name avatar_url")
+      .populate("user_id", "email name avatar_url");
     res.status(200).json(plans);
   } catch (error) {
     res.status(500).json({ message: "Error retrieving quit plans", error });
@@ -316,14 +320,15 @@ exports.usePublicPlan = async (req, res) => {
         .status(404)
         .json({ message: "Kế hoạch công khai không tồn tại" });
 
-
     const existingClone = await QuitPlan.findOne({
       user_id: user_id,
-      cloned_from_id: plan_id
+      cloned_from_id: plan_id,
     });
 
     if (existingClone) {
-      return res.status(409).json({ message: "Bạn đã sao chép kế hoạch này rồi." });
+      return res
+        .status(409)
+        .json({ message: "Bạn đã sao chép kế hoạch này rồi." });
     }
 
     // 1. Tạo kế hoạch mới cho user
@@ -336,7 +341,7 @@ exports.usePublicPlan = async (req, res) => {
       image: publicPlan.image,
       is_public: false,
       status: "approved",
-      cloned_from_id: publicPlan._id
+      cloned_from_id: publicPlan._id,
     });
 
     // 2. Clone tất cả các stage
@@ -351,7 +356,7 @@ exports.usePublicPlan = async (req, res) => {
         start_date: stage.start_date,
         end_date: stage.end_date,
         is_completed: false,
-        cigarette_limit: stage.cigarette_limit
+        cigarette_limit: stage.cigarette_limit,
       });
 
       // 3. Clone tất cả các task thuộc stage đó
@@ -438,17 +443,11 @@ module.exports.createPublicPlan = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
       return res.status(403).json({
-        message: "Chỉ admin mới được tạo kế hoạch công khai"
+        message: "Chỉ admin mới được tạo kế hoạch công khai",
       });
     }
 
-    const {
-      reason,
-      name,
-      start_date,
-      target_quit_date,
-      image
-    } = req.body;
+    const { reason, name, start_date, target_quit_date, image } = req.body;
 
     const publicPlan = await QuitPlan.create({
       user_id: req.user.id,
@@ -457,18 +456,17 @@ module.exports.createPublicPlan = async (req, res) => {
       start_date,
       target_quit_date,
       image,
-      is_public: true
+      is_public: true,
     });
 
     res.status(201).json({
       message: "Đã tạo kế hoạch công khai thành công",
-      plan: publicPlan
+      plan: publicPlan,
     });
-
   } catch (error) {
     res.status(400).json({
       message: "Lỗi khi tạo kế hoạch công khai",
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -477,7 +475,7 @@ module.exports.togglePlanPublicStatus = async (req, res) => {
   try {
     if (req.user.role !== "admin") {
       return res.status(403).json({
-        message: "Chỉ admin mới được thay đổi trạng thái công khai"
+        message: "Chỉ admin mới được thay đổi trạng thái công khai",
       });
     }
 
@@ -491,13 +489,28 @@ module.exports.togglePlanPublicStatus = async (req, res) => {
 
     res.status(200).json({
       message: `Đã ${plan.is_public ? "công khai" : "ẩn"} kế hoạch thành công`,
-      plan
+      plan,
     });
-
   } catch (error) {
     res.status(400).json({
       message: "Lỗi khi thay đổi trạng thái công khai",
-      error: error.message
+      error: error.message,
     });
+  }
+};
+// controllers/quitPlan.controller.js
+exports.getQuitPlansByCoach = async (req, res) => {
+  try {
+    const coachId = req.user.id;
+
+    const plans = await QuitPlan.find({ coach_id: coachId })
+      .populate("user_id", "name email")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json(plans);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Lỗi server khi lấy kế hoạch của coach", error });
   }
 };

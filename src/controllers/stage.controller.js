@@ -231,3 +231,23 @@ exports.getAllStages = async (req, res) => {
     res.status(400).json({ message: "Error fetching all stages", error });
   }
 };
+
+exports.getStagesByCoach = async (req, res) => {
+  try {
+    // Lấy danh sách kế hoạch do coach đang đăng nhập tạo
+    const myPlans = await QuitPlan.find({ coach_id: req.user.id }).select(
+      "_id"
+    );
+
+    const planIds = myPlans.map((plan) => plan._id);
+
+    const stages = await Stage.find({ plan_id: { $in: planIds } }).sort({
+      stage_number: 1,
+    });
+
+    res.status(200).json(stages);
+  } catch (error) {
+    console.error("Lỗi khi lấy stages của coach:", error);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách giai đoạn", error });
+  }
+};

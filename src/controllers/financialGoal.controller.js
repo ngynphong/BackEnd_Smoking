@@ -61,23 +61,21 @@ exports.getGoalProgress = async (req, res) => {
     if (!goal)
       return res.status(404).json({ message: "Không tìm thấy mục tiêu" });
 
-    const progress = await Progress.findById(goal.progress_id);
-    if (!progress) {
-      return res.status(200).json({
-        money_saved: 0,
-        percentage: 0,
-        note: "Chưa có dữ liệu tiết kiệm",
-      });
-    }
+    // ✅ Tổng hợp tất cả tiến trình của user
+    const allProgress = await Progress.find({ user_id: goal.user_id });
 
-    const moneySaved = progress.money_saved || 0;
+    const totalSaved = allProgress.reduce(
+      (sum, p) => sum + (p.money_saved || 0),
+      0
+    );
+
     const percentage = Math.min(
-      (moneySaved / goal.target_amount) * 100,
+      (totalSaved / goal.target_amount) * 100,
       100
     ).toFixed(2);
 
     res.status(200).json({
-      money_saved: moneySaved,
+      money_saved: totalSaved,
       percentage: parseFloat(percentage),
     });
   } catch (error) {

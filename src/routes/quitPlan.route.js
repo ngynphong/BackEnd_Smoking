@@ -2,7 +2,9 @@ const express = require("express");
 const quitPlanRouter = express.Router();
 const quitPlanController = require("../controllers/quitPlan.controller");
 const { validateToken, checkRole } = require("../middlewares/AuthMiddleware");
-const { checkSubscriptionAccess } = require("../middlewares/SubscriptionMiddleware");
+const {
+  checkSubscriptionAccess,
+} = require("../middlewares/SubscriptionMiddleware");
 
 //Get all quit plan public
 quitPlanRouter.get("/public", validateToken, quitPlanController.getPublicPlans);
@@ -76,7 +78,7 @@ quitPlanRouter.put(
 quitPlanRouter.post(
   "/request",
   validateToken,
-  checkSubscriptionAccess(['plus','premium']),
+  checkSubscriptionAccess(["plus", "premium"]),
   checkRole(["user", "coach", "admin"]),
   quitPlanController.sendQuitPlanRequest
 );
@@ -84,14 +86,14 @@ quitPlanRouter.post(
 quitPlanRouter.get(
   "/request/mine",
   validateToken,
-  checkSubscriptionAccess(['plus', 'premium']),
+  checkSubscriptionAccess(["plus", "premium"]),
   quitPlanController.getMyQuitPlanRequests
 );
 
 quitPlanRouter.delete(
   "/request/:id",
   validateToken,
-  checkSubscriptionAccess(['plus', 'premium']),
+  checkSubscriptionAccess(["plus", "premium"]),
   quitPlanController.cancelQuitPlanRequest
 );
 
@@ -106,9 +108,23 @@ quitPlanRouter.get(
   validateToken,
   quitPlanController.getRequestsByCoachId
 );
+// routes/quitPlan.routes.js
+quitPlanRouter.get(
+  "/coach/my-plans",
+  validateToken,
+  checkRole(["coach"]),
+  quitPlanController.getQuitPlansByCoach
+);
 
-quitPlanRouter.post('/public', validateToken, quitPlanController.createPublicPlan);
-quitPlanRouter.put('/:id/toggle-public', validateToken, quitPlanController.togglePlanPublicStatus);
-
+quitPlanRouter.post(
+  "/public",
+  validateToken,
+  quitPlanController.createPublicPlan
+);
+quitPlanRouter.put(
+  "/:id/toggle-public",
+  validateToken,
+  quitPlanController.togglePlanPublicStatus
+);
 
 module.exports = quitPlanRouter;
