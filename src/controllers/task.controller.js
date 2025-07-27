@@ -124,7 +124,7 @@ module.exports.completeTask = async (req, res) => {
     res.json({
       message: "Hoàn thành task thành công",
       taskResult,
-      stage_completed: totalTasks > 0 && completedCount === totalTasks,
+      // stage_completed: totalTasks > 0 && completedCount === totalTasks,
     });
   } catch (err) {
     console.error("Lỗi cập nhật task:", err);
