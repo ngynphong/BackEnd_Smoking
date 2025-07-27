@@ -9,6 +9,7 @@ const { OAuth2Client } = require('google-auth-library');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const Subscription = require('../models/subscription.model');
 const Package = require('../models/package.model');
+const VITE_URL_BASE = 'http://localhost:5173' || process.env.VITE_BASE_URL;  // Default to local URL if not set 
 //Create token
 const maxAge = 3 * 24 * 60 * 60;
 const createToken = (user) => {
@@ -75,7 +76,7 @@ module.exports.register = async (req, res) => {
         await newSubscription.save();
 
         // Tạo link xác thực
-        const verificationLink = `http://localhost:${process.env.VITE_PORT}/login/${vertificationToken}`;// sẽ sửa lại verificationLink khi có front-end fogetpassword
+        const verificationLink = `${VITE_URL_BASE}/login/${vertificationToken}`;// sẽ sửa lại verificationLink khi có front-end fogetpassword
         // Gửi email xác thực
         const mailOptions = {
             from: process.env.EMAIL_USER,
@@ -252,7 +253,7 @@ module.exports.login = async (req, res) => {
         if (!user.isVerified) {
             return res.status(400).json({
                 message: 'Email not verified',
-                verificationLink: `http://localhost:${process.env.VITE_PORT}/login/${user.vertificationToken}`// sẽ sửa lại verificationLink khi có front-end fogetpassword
+                verificationLink: `${VITE_URL_BASE}/login/${user.vertificationToken}`// sẽ sửa lại verificationLink khi có front-end fogetpassword
             })
         }
         const isMatch = await bcrypt.compare(password, user.password);
@@ -299,7 +300,7 @@ module.exports.fogotPassword = async (req, res) => {
 
         await user.save();
 
-        const resetLink = `http://localhost:${process.env.VITE_PORT}/resset-password/${ressetToken}`; // sẽ sửa lại resetLink khi có front-end fogetpassword
+        const resetLink = `${VITE_URL_BASE}/resset-password/${ressetToken}`; // sẽ sửa lại resetLink khi có front-end fogetpassword
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: email,
